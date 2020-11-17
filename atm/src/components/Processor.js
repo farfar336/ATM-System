@@ -7,9 +7,10 @@ class Processor {
         this.cashDisburser = cashDisburser;
         this.monitor = monitor;
         this.clock = clock;
-        this.currentEvent = "NULL";
         this.PIN = "";
         this.amount = 0;
+        this.maxAmount = 400;
+        this.currentEvent = "NULL";
 
         setInterval(() => {
             this.eventCapture();
@@ -32,12 +33,10 @@ class Processor {
             const keyPressed = this.keyPad.keyPressed;
             if (keyPressed === "CANCEL") {
                 this.PIN = ""
+            } else if (keyPressed === "ENTER") {
+                this.currentEvent = "CHECK_PIN"
             } else if (this.PIN.length < 4) {
                 this.PIN = this.PIN += keyPressed;
-            }
-
-            if (this.PIN.length === 4) {
-                this.currentEvent = "CHECK_PIN"
             }
         } else if (this.currentEvent === "DISBURSE") {
             if (this.cashDisburser.disbuerseFinished) {
@@ -49,11 +48,11 @@ class Processor {
             const keyPressed = this.keyPad.keyPressed;
             if (keyPressed === "CANCEL") {
                 this.currentEvent = "EJECT_CARD";
-                return; 
-            } else if (this.amount < 400) {
+            } else if (keyPressed === "ENTER") {
+                this.currentEvent = "CHECK_AMOUNT";
+            } else {
                 const digit = parseInt(keyPressed); 
                 this.amount = this.amount * 10 + digit;
-                this.currentEvent = "CHECK_AMOUNT";
             }
         } 
     }
@@ -83,7 +82,7 @@ class Processor {
     }
 
     verifyAmount() {
-        if (this.amount === 0 || this.amount > 400) {
+        if (this.amount === 0 || this.amount > this.maxAmount) {
             this.currentEvent = "EJECT_CARD";
             return
         }
