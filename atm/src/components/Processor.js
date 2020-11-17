@@ -90,10 +90,10 @@ class Processor {
     }
 
     scanCard() {
-        const readSuccess = this.cardScanner.readSuccess
+        const read = this.cardScanner.read
         const accountNumer = this.cardScanner.accountNumber;
-        console.log(accountNumer);
-        if (!readSuccess) {
+        console.log(this.cardScanner);
+        if (!read) {
             this.currentEvent = "EJECT_CARD";
             return;
         } 
@@ -101,12 +101,12 @@ class Processor {
             this.currentEvent = "EJECT_CARD";
             return; 
         }
-        this.currentEvent = "CHECK_PIN"
+        this.currentEvent = "READ_PIN"
     }
 
     ejectCard() {
         this.cardScanner.accountNumber = "";
-        this.cardScanner.readSuccess = false;
+        this.cardScanner.read = false;
         this.cardScanner.inserted = false;
         this.currentEvent = "NULL"
     }

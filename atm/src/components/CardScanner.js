@@ -1,7 +1,7 @@
 class CardScanner {
     constructor() {
         this.accountNumber = "";
-        this.readSuccess = false;
+        this.read = false;
         this.inserted = false
     }
 }

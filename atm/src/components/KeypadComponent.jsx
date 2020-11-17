@@ -19,8 +19,9 @@ const Keypad = (props) => {
             <button className="KeypadButton">9</button>
         </div>
         <div className="KeypadRow">
-            <button className="KeypadButton">0</button>
             <button className="KeypadButton">X</button>
+            <button className="KeypadButton">0</button>
+            <button className="KeypadButton">🗸</button>
         </div>
     </div>)
 }
