@@ -16,17 +16,18 @@ import Monitor from "./Monitor";
 
 import "./ATM.css"
 
-const ATM = () => {
-    const [message, setMessage] = useState("");  
+const cardScanner = new CardScanner();
+const database = new Database();
+const clock = new Clock();
+const cashBank = new CashBank(20);
+const cashDisburser = new CashDisburser();
+const monitor = new Monitor();
+const keypad = new Keypad();
+const processor = new Processor(database, cardScanner, keypad, cashBank, cashDisburser, monitor, clock);
 
-    const cardScanner = new CardScanner();
-    const database = new Database();
-    const clock = new Clock();
-    const cashBank = new CashBank(20);
-    const cashDisburser = new CashDisburser();
-    const monitor = new Monitor(setMessage);
-    const keypad = new Keypad();
-    const processor = new Processor(database, cardScanner, keypad, cashBank, cashDisburser, monitor, clock);
+const ATM = () => {
+    const [message, setMessage] = useState(""); 
+    monitor.update = setMessage; 
 
     return (<div className="ATM">
         <div className="Monitor">
@@ -35,7 +36,7 @@ const ATM = () => {
         <div className="Panel">
             <KeypadComponent keypad={keypad}/>
             <CardScannerComponent cardScanner={cardScanner}/>
-            <CashDisburserComponent/>
+            <CashDisburserComponent cashDisburser={cashDisburser}/>
         </div>
     </div>)
 }
