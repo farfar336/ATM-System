@@ -7,9 +7,9 @@ class Processor {
         this.cashDisburser = cashDisburser;
         this.monitor = monitor;
         this.clock = clock;
-        this.amount = 0;
         this.currentEvent = "NULL";
-        this.PIN = [];
+        this.PIN = "";
+        this.amount = 0;
 
         setInterval(() => {
             this.eventCapture();
@@ -31,13 +31,9 @@ class Processor {
             this.keyPressed = "";
             const keyPressed = this.keyPad.keyPressed;
             if (keyPressed === "CANCEL") {
-                this.PIN = []
+                this.PIN = ""
             } else if (this.PIN.length < 4) {
-                const digit = parseInt(keyPressed); 
-                if (digit > 9) {
-                    return
-                }
-                this.PIN.push(digit);
+                this.PIN = this.PIN += keyPressed;
             }
 
             if (this.PIN.length === 4) {
@@ -54,35 +50,12 @@ class Processor {
             if (keyPressed === "CANCEL") {
                 this.currentEvent = "EJECT_CARD";
                 return; 
-            } else if (this.PIN.length < 4) {
+            } else if (this.amount < 400) {
                 const digit = parseInt(keyPressed); 
-                if (digit <= 9) {
-                    return
-                }
-                switch (digit) {
-                    case 10:
-                        this.amount = 20;
-                        break
-                    case 11:
-                        this.amount = 40;
-                        break
-                    case 12:
-                        this.amount = 80;
-                        break
-                    case 13:
-                        this.amount = 100;
-                        break
-                    case 14:
-                        this.amount = 200;
-                        break
-                    case 15:
-                        this.amount = 400;
-                        break
-                    default:
-                }
-                this.currentEvent = "VERIFY_BALANCE";
+                this.amount = this.amount * 10 + digit;
+                this.currentEvent = "CHECK_AMOUNT";
             }
-        }
+        } 
     }
 
     eventDispatch() {
@@ -92,6 +65,9 @@ class Processor {
                 break;
             case "CHECK_PIN":
                 this.checkPin();    
+                break;
+            case "CHECK_AMOUNT":
+                this.verifyAmount();
                 break;
             case "VERIFY_ACCOUNT":
                 this.verifyAccountBalance();
@@ -104,6 +80,14 @@ class Processor {
                 break;
             default:
         }
+    }
+
+    verifyAmount() {
+        if (this.amount === 0 || this.amount > 400) {
+            this.currentEvent = "EJECT_CARD";
+            return
+        }
+        this.currentEvent = "VERIFY_BALANCE"
     }
 
     scanCard() {

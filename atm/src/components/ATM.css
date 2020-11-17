@@ -8,7 +8,7 @@
 .Panel {
   display: flex;
   flex-direction: row;
-  width: 70%;
+  width: 100%;
   padding-top: 20px;
 }
 

@@ -30,9 +30,7 @@ const ATM = () => {
 
     return (<div className="ATM">
         <div className="Monitor">
-            <LeftKeyPanel keypad={keypad}/>
             <MonitorComponent message={message}/>
-            <RightKeyPanel keypad={keypad}/>
         </div>
         <div className="Panel">
             <KeypadComponent keypad={keypad}/>
