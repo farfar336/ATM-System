@@ -1,8 +1,28 @@
 .CardScanner {
   width: 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.CardSlot {
+  width: 150px;
 }
 
 .Card {
-  width: 150px;
-  background-color: black;
+  border-radius: 10px;
+  border-bottom: 150px solid gray;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  height: 0;
+  width: 140px;
+  transition: border-bottom 1s ease-in-out;
+}
+
+.Card-invisible {
+  border-bottom: 150px solid transparent;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  height: 0;
+  width: 140px;
 }
