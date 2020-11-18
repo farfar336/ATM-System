@@ -1,5 +1,6 @@
 class Processor {
     constructor(database, cardScanner, keypad, cashBank, cashDisburser, monitor, clock, render) {
+        // System structure
         this.database = database;
         this.cardScanner = cardScanner;
         this.keypad = keypad;
@@ -7,29 +8,25 @@ class Processor {
         this.cashDisburser = cashDisburser;
         this.monitor = monitor;
         this.clock = clock;
+
+        // Global variables
         this.PIN = "";
-        this.amount = 0;
-        this.maxAmount = 400;
+        this.requestedAmount = 0;
+        this.accounts = 0;
+        this.errorMessage = "";
         this.currentEvent = "WELCOME";
+
+        // Status
         this.welcomed = false;
-        this.cardScaned = false;
         this.pinChecked = false;
         this.amountChecked = false;
         this.balanceVerified = false;
         this.cashAvailiabilityVerified = false;
         this.disbursed = false;
-        this.cardEjected = false;
+        this.ejected = false;
         this.errorMessage = null;
-        this.welcomeMessage = "Welcome, please insert your card";
-        this.enterPINMessage = "Please enter your PIN";
-        this.enterWithdrawMessage = "Please enter withdraw amount which is a multiple of $20";
-        this.wrongPinErrorMessage = "Wrong PIN"
-        this.amountExceedErrorMessage = "Amount exceed our one time withdraw amount of $400";
-        this.remainderErrorMessage = "Amount has to be a multiple of $20";
-        this.notEnoughBalanceErrorMessage = "Balance is not enough to complete withdraw";
-        this.notEnoughBillErrorMessage = "Not enough bill in this ATM";
-        this.disbuerseMessage = "Disbursing...";
-        this.ejectMessage = "Please take your money and card";
+        
+        // React specific stuff
         this.render = render;
 
         setInterval(() => {
@@ -41,60 +38,46 @@ class Processor {
     }
 
     eventCapture() {
-        console.log(this.currentEvent)
-        if (this.cardEjected) {
-            if (this.cardScanner.status === 0) {
-                this.amount = 0;
-                this.PIN = "";
-                this.welcomed = false;
-                this.cardScaned = false;
-                this.pinChecked = false;
-                this.amountChecked = false;
-                this.balanceVerified = false;
-                this.cashAvailiabilityVerified = false;
-                this.cardEjected = false;
-                this.currentEvent = "WELCOME"
+        console.log(this.ejected)
+        if (this.ejected) {
+            this.ejected = false;
+            this.currentEvent = "WELCOME";
+        } else if (this.disbursing) {
+            if (this.cashDisburser.disbursed) {
+                this.currentEvent = "DISBURSED"
             }
-        } else if (this.amountChecked || this.balanceVerified || this.cashAvailiabilityVerified) { 
         } else if (this.pinChecked) {
             const keyPressed = this.keypad.keyPressed;
             this.keypad.keyPressed = null;
             console.log(keyPressed)
-            console.log(this.amount)
+            console.log(this.requestedAmount)
             if (keyPressed === null) {
                 return;
             } else if (keyPressed === 11) {
-                this.currentEvent = "EJECT_CARD";
+                this.requestedAmount = 0;
             } else if (keyPressed === 10) {
                 this.currentEvent = "CHECK_AMOUNT";
             } else {
-                this.amount = this.amount * 10 + keyPressed;
+                this.requestedAmount = this.requestedAmount * 10 + keyPressed;
                 this.keypad.keyPressed = null;
             }
-        } else if (this.cardScaned) {
-            const keyPressed = this.keypad.keyPressed;
-            console.log(this.keypad);
-            this.keypad.keyPressed = null;
-            console.log(keyPressed);
-            if (keyPressed === null) {
-                return;
-            } else if (keyPressed === 11) {
-                this.PIN = "";
-            } else if (keyPressed === 10) {
-                this.currentEvent = "CHECK_PIN";
-            } else if (this.PIN.length < 4) {
-                this.PIN = this.PIN += keyPressed;
-            }
-            console.log(keyPressed);
-            console.log(this.PIN);
         } else if (this.welcomed) {
-            if (this.cardScanner.status === 1) {
-                console.log(this.cardScanner)
+            if (this.cardScanner.status) {
+                this.monitor.message = "Enter PIN"
                 this.account = this.cardScanner.accountNumber;
-                this.cardScaned = true;    
-                
-                this.monitor.message = this.enterPINMessage;
-                
+                const keyPressed = this.keypad.keyPressed;
+                console.log(this.keypad);
+                this.keypad.keyPressed = null;
+                console.log(keyPressed);
+                if (keyPressed === null) {
+                    return;
+                } else if (keyPressed === 11) {
+                    this.PIN = "";
+                } else if (keyPressed === 10) {
+                    this.currentEvent = "CHECK_PIN";
+                } else if (this.PIN.length < 4) {
+                    this.PIN = this.PIN += keyPressed;
+                }
             }
         }
     }
@@ -102,127 +85,117 @@ class Processor {
     eventDispatch() {
         switch (this.currentEvent) {
             case "WELCOME":
-                this.currentEvent = null
-                this.welcome();
+                this.welcome()
                 break;
             case "CHECK_PIN":
-                this.currentEvent = null
-                this.checkPin();    
-                break;
+                this.checkPIN()
+                break
             case "CHECK_AMOUNT":
-                this.currentEvent = null
-                this.verifyAmount();
-                break;
-            case "VERIFY_BALANCE":
-                this.currentEvent = null
-                this.verifyAccountBalance();
-                break;
-            case "VERIFY_CASH_AVAILABILITY":
-                this.currentEvent = null;
-                this.verifyBillAvailiability();
-                break;
-            case "DISBURSE":
-                this.currentEvent = null
-                this.disburse();
-                break;
-            case "EJECT_CARD":
-                this.currentEvent = null
-                this.ejectCard();
-                break;
+                this.checkAmount();    
+                break
+            case "DISBURSED":
+                this.ejectCard();    
+                break
             default:
         }
+        this.currentEvent = null;
     }
 
     welcome() {
-        this.monitor.message = this.welcomeMessage;
-        
+        this.monitor.message = "Welcome";
         this.welcomed = true;
     }
-
-    verifyAmount() {
-        if (this.amount === 0 || this.amount > this.maxAmount) {
-            this.errorMessage = this.amountExceedErrorMessage;
-            this.systemError();
-            return
-        } else if (this.amount % 20 !== 0) {
-            this.errorMessage = this.remainderErrorMessage;
-            this.systemError();
+    
+    checkPIN() {
+        this.welcomed = false;
+        const account = this.database.accounts[this.account]
+        if (account.PIN === this.PIN) {
+            this.pinChecked = true;
+            this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
+        } else {
+            this.errorMessage = "Wrong PIN"
+            this.systemFailure();
         }
-        this.currentEvent = "VERIFY_BALANCE"
-        this.amountChecked = true;
-    }
+    }    
 
-    checkPin() {
-        const accountNumber = this.cardScanner.accountNumber;
-        const account = this.database.accounts[accountNumber]
-        console.log((account.PIN))
-        console.log(this.PIN)
-        if (account.PIN !== this.PIN) {
-            this.errorMessage = this.wrongPinErrorMessage;
-            this.systemError();
-            return; 
+    checkAmount() {
+        this.pinChecked = false;
+        const account = this.database.accounts[this.account];
+        const remainMaxAccount = account.maxAllowableWithdraw - account.currentWithdraw;
+        console.log(remainMaxAccount)
+        console.log(this.requestedAmount)
+        if (remainMaxAccount > this.requestedAmount) {
+            this.amountChecked = true;
+            this.verifyAccountBalance();
+        } else {
+            this.errorMessage = "Max withdraw amount reached";
+            this.systemFailure();
         }
-        this.keypad.keyPressed = "";
-        this.pinChecked = true;
-        this.monitor.message = this.enterWithdrawMessage;
-        
     }
-
 
     verifyAccountBalance() {
-        const accountNumber = this.cardScanner.accountNumber;
-        const account = this.database.accounts[accountNumber]
-        console.log(this.amount)
-        console.log(account.balance)
-        if (account.balance < this.amount) {
-            this.errorMessage = this.notEnoughBalanceErrorMessage
-            this.systemError();
-            return; 
-        } 
-        this.currentEvent = "VERIFY_CASH_AVAILABILITY"
-        this.balanceVerified = true; 
+        this.amountChecked = false;
+        const account = this.database.accounts[this.account];
+        if (account.balance > this.requestedAmount) {
+            this.balanceVerified = true;
+            this.verifyBillAvailiability()
+        } else {
+            this.errorMessage = "Not enough account balance";
+            this.systemFailure();
+        }
     }
 
     verifyBillAvailiability() {
-        const bills = this.amount / 20;
-        if (bills > this.cashBank.twentyDollarBills ) {
-            this.errorMessage = this.notEnoughBalanceErrorMessage;
-            this.systemError();
+        this.balanceVerified = false;
+        if (this.requestedAmount % 20 !== 0) {
+            this.errorMessage = "Amount entered is not in multiple of $20";
+            this.systemFailure();
+        } else {
+            const bills = this.requestedAmount / 20;
+            if (this.cashBank.twentyDollarBills > bills) {
+                this.cashAvailiabilityVerified = true;
+                this.disburseBill(); 
+            } else {
+                this.errorMessage = "Not enough cash in this ATM";
+                this.systemFailure();
+            }
         }
-        this.currentEvent = "DISBURSE";
-        this.cashAvailiabilityVerified = true;
     }
 
-    disburse() {
-        const bills = this.amount / 20;
+    disburseBill() {
+        this.cashAvailiabilityVerified = false;
+        const bills = this.requestedAmount / 20;
+        this.cashDisburser.twentyDollarBills = bills;
         this.cashBank.twentyDollarBills -= bills;
-        this.cashDisburser.twentyDollarBillsToDisburse = this.bills;
-        const accountNumber = this.cardScanner.accountNumber;
-        const account = this.database.accounts[accountNumber]
-        account.balance -= this.amount;
-        console.log(this.database);
-        this.monitor.message = this.disbuerseMessage;
+
+        const account = this.database.accounts[this.account];
+        account.balance -= this.requestedAmount;
+        account.currentWithdraw += this.requestedAmount;
+        this.disbursing = true;
+        this.monitor.message = "Disbursing";
+
+        // This is for mimicing the process of cash disbursing
         setTimeout(() => {
-            this.currentEvent = "EJECT_CARD";
-            this.monitor.message = this.ejectMessage;
-            
-            this.disbursed = true;
-        }, 3000)
-        
+            this.cashDisburser.disbursed = true;
+            this.cashDisburser.twentyDollarBills = 0;
+        }, 500)
     }
 
     ejectCard() {
-        this.cardScanner.status = 2;
-        this.cardEjected = true;
+        this.disbursing = false;
+        setTimeout(() => {
+            this.cardScanner.status = false
+            this.ejected = true;
+        }, 500)
     } 
 
-    clock() {
+    systemClock() {
         this.monitor.timestamp = this.clock.timestamp;
     }
 
-    systemError() {
-        this.currentEvent = "EJECT_CARD";
+    systemFailure() {
         this.monitor.message = this.errorMessage;
+        this.ejectCard();
     }
 }
 
