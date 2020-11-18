@@ -1,7 +1,7 @@
 class Monitor {
-    constructor(update) {
+    constructor() {
         this.message = "";
-        this.update = update;
+        this.timestamp = "";
     }
 }
 

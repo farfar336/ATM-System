@@ -1,6 +1,6 @@
 class Keypad {
     constructor() {
-        this.keyPressed = "";
+        this.keyPressed = null;
     }
 }
 

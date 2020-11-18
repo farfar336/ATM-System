@@ -23,11 +23,18 @@ const cashBank = new CashBank(20);
 const cashDisburser = new CashDisburser();
 const monitor = new Monitor();
 const keypad = new Keypad();
-const processor = new Processor(database, cardScanner, keypad, cashBank, cashDisburser, monitor, clock);
+const processor = new Processor(database, cardScanner, keypad, cashBank, cashDisburser, monitor, clock, () => {});
 
 const ATM = () => {
-    const [message, setMessage] = useState(""); 
-    monitor.update = setMessage; 
+    const [message, setMessage] = useState("");
+    const [timestamp, setTimestamp] = useState(""); 
+    
+    const render = () => {
+        setMessage(monitor.message);
+        setTimestamp(monitor.timestamp);
+    }
+
+    processor.render = render;
 
     return (<div className="ATM">
         <div className="Monitor">
