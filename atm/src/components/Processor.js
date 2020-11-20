@@ -19,7 +19,9 @@ class Processor {
         // Status
         this.welcomed = false;
         this.pinChecked = false;
+        this.wrongPin = false;
         this.amountChecked = false;
+        this.maxAmount = false;
         this.balanceVerified = false;
         this.cashAvailiabilityVerified = false;
         this.disbursed = false;
@@ -31,14 +33,14 @@ class Processor {
 
         setInterval(() => {
             this.eventCapture();
-            console.log(this.currentEvent)
             this.eventDispatch();
+            this.systemClock();
             this.render();
         }, 100)
     }
 
     eventCapture() {
-        console.log(this.ejected)
+        console.log(this.currentEvent)
         if (this.ejected) {
             this.ejected = false;
             this.currentEvent = "WELCOME";
@@ -47,14 +49,17 @@ class Processor {
                 this.currentEvent = "DISBURSED"
             }
         } else if (this.pinChecked) {
+            if (!this.maxAmount) {
+                this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
+            }
             const keyPressed = this.keypad.keyPressed;
             this.keypad.keyPressed = null;
-            console.log(keyPressed)
-            console.log(this.requestedAmount)
             if (keyPressed === null) {
                 return;
             } else if (keyPressed === 11) {
-                this.requestedAmount = 0;
+                this.monitor.message = "Transcation cancelled";
+                this.pinChecked = false;
+                this.currentEvent = "CANCEL_TRANSCATION"
             } else if (keyPressed === 10) {
                 this.currentEvent = "CHECK_AMOUNT";
             } else {
@@ -63,16 +68,18 @@ class Processor {
             }
         } else if (this.welcomed) {
             if (this.cardScanner.status) {
-                this.monitor.message = "Enter PIN"
-                this.account = this.cardScanner.accountNumber;
+                if (!this.wrongPin) {
+                    this.monitor.message = "Enter PIN"
+                    this.account = this.cardScanner.accountNumber;
+                }
                 const keyPressed = this.keypad.keyPressed;
-                console.log(this.keypad);
                 this.keypad.keyPressed = null;
-                console.log(keyPressed);
                 if (keyPressed === null) {
                     return;
                 } else if (keyPressed === 11) {
-                    this.PIN = "";
+                    this.monitor.message = "Transcation cancelled";
+                    this.welcomed = false;
+                    this.currentEvent = "CANCEL_TRANSCATION"
                 } else if (keyPressed === 10) {
                     this.currentEvent = "CHECK_PIN";
                 } else if (this.PIN.length < 4) {
@@ -96,6 +103,9 @@ class Processor {
             case "DISBURSED":
                 this.ejectCard();    
                 break
+            case "CANCEL_TRANSCATION":
+                this.ejectCard();
+                break;
             default:
         }
         this.currentEvent = null;
@@ -107,29 +117,31 @@ class Processor {
     }
     
     checkPIN() {
-        this.welcomed = false;
         const account = this.database.accounts[this.account]
         if (account.PIN === this.PIN) {
             this.pinChecked = true;
-            this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
+            this.welcomed = false;
+            this.wrongPin = false;
         } else {
-            this.errorMessage = "Wrong PIN"
-            this.systemFailure();
+            this.monitor.message = "Wrong PIN, try again";
+            this.PIN = "";
+            this.wrongPin = true;
         }
     }    
 
-    checkAmount() {
-        this.pinChecked = false;
+    checkAmount() { 
+        this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
         const account = this.database.accounts[this.account];
         const remainMaxAccount = account.maxAllowableWithdraw - account.currentWithdraw;
-        console.log(remainMaxAccount)
-        console.log(this.requestedAmount)
-        if (remainMaxAccount > this.requestedAmount) {
+        if (remainMaxAccount >= this.requestedAmount) {
+            this.pinChecked = false;
             this.amountChecked = true;
+            this.maxAmount = false;
             this.verifyAccountBalance();
         } else {
-            this.errorMessage = "Max withdraw amount reached";
-            this.systemFailure();
+            this.monitor.message = "Max withdraw amount reached, try again";
+            this.maxAmount = true
+            this.requestedAmount = 0;
         }
     }
 
@@ -190,7 +202,7 @@ class Processor {
     } 
 
     systemClock() {
-        this.monitor.timestamp = this.clock.timestamp;
+        this.monitor.timestamp = this.clock.time;
     }
 
     systemFailure() {

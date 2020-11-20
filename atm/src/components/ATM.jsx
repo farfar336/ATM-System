@@ -38,12 +38,11 @@ const ATM = () => {
 
     return (<div className="ATM">
         <div className="Monitor">
-            <MonitorComponent message={message}/>
+            <MonitorComponent message={message} timestamp={timestamp}/>
         </div>
         <div className="Panel">
             <KeypadComponent keypad={keypad}/>
             <CardScannerComponent cardScanner={cardScanner}/>
-            <CashDisburserComponent cashDisburser={cashDisburser}/>
         </div>
     </div>)
 }

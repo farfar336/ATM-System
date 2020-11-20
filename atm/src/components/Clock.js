@@ -1,8 +1,8 @@
 class Clock {
     constructor() {
         setInterval(() => {
-            this.time = new Date();
-        }, 1000)
+            this.time = new Date().toString();
+        }, 100)
     }
 }
 
