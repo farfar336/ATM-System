@@ -49,8 +49,8 @@ class Processor {
                 this.currentEvent = "DISBURSED"
             }
         } else if (this.pinChecked) {
-            if (!this.maxAmount) {
-                this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
+            if (!this.maxAmount || this.requestedAmount > 0) {
+                this.monitor.message = "Enter withdraw amount which must be a multiple of $20: $" + this.requestedAmount;
             }
             const data = this.keypad.data;
             const cancel = this.keypad.cancel;
@@ -66,22 +66,23 @@ class Processor {
                 this.currentEvent = "CHECK_AMOUNT";
             } else if (data < 10){
                 this.requestedAmount = this.requestedAmount * 10 + data;
-                this.keypad.keyPressed = null;
             }
         } else if (this.welcomed) {
             if (this.cardScanner.status) {
-                if (!this.wrongPin) {
-                    this.monitor.message = "Enter PIN"
-                    this.account = this.cardScanner.accountNumber;
+                if (!this.wrongPin || this.PIN.length > 0) {
+                    let message = "Enter PIN: ";
+                    for(let i = 0; i < this.PIN.length; i++) {
+                        message += "*"
+                    }
+                    this.monitor.message = message;
+                    this.account = this.cardScanner.accountNumber; 
                 }
                 const data = this.keypad.data;
                 const cancel = this.keypad.cancel;
                 const enter = this.keypad.enter;
-                console.log(this.keypad);
                 this.keypad.data = 10;
                 this.keypad.cancel = false;
                 this.keypad.enter = false;
-                console.log(this.keypad);
                 if (cancel) {
                     this.monitor.message = "Transcation cancelled";
                     this.welcomed = false;
@@ -129,14 +130,14 @@ class Processor {
             this.welcomed = false;
             this.wrongPin = false;
         } else {
-            this.monitor.message = "Wrong PIN, try again";
             this.PIN = "";
+            this.monitor.message = "Wrong PIN, try again";
             this.wrongPin = true;
         }
     }    
 
     checkAmount() { 
-        this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
+        this.monitor.message = "Enter withdraw amount which must be a multiple of $20: ";
         const account = this.database.accounts[this.account];
         const remainMaxAccount = account.maxAllowableWithdraw - account.currentWithdraw;
         if (remainMaxAccount >= this.requestedAmount) {
@@ -145,9 +146,9 @@ class Processor {
             this.maxAmount = false;
             this.verifyAccountBalance();
         } else {
-            this.monitor.message = "Max withdraw amount reached, try again";
-            this.maxAmount = true
             this.requestedAmount = 0;
+            this.monitor.message = "Max withdraw amount reached, $" + remainMaxAccount + " left, try again";
+            this.maxAmount = true
         }
     }
 
@@ -158,7 +159,7 @@ class Processor {
             this.balanceVerified = true;
             this.verifyBillAvailiability()
         } else {
-            this.errorMessage = "Not enough account balance";
+            this.errorMessage = "Not enough account balance $" + account.balance + " left";
             this.systemFailure();
         }
     }
@@ -174,7 +175,7 @@ class Processor {
                 this.cashAvailiabilityVerified = true;
                 this.disburseBill(); 
             } else {
-                this.errorMessage = "Not enough cash in this ATM";
+                this.errorMessage = "Not enough cash in this ATM $" + this.twentyDollarBills + " left";
                 this.systemFailure();
             }
         }
@@ -200,7 +201,11 @@ class Processor {
     }
 
     ejectCard() {
+        this.requestedAmount = 0;
         this.disbursing = false;
+        this.PIN = "";
+        this.requestedAmount = 0;
+        this.account = 0;
         setTimeout(() => {
             this.cardScanner.status = false
             this.ejected = true;
