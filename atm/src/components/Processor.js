@@ -18,10 +18,9 @@ class Processor {
 
         // Status
         this.welcomed = false;
+        this.inserted = false;
         this.pinChecked = false;
-        this.wrongPin = false;
         this.amountChecked = false;
-        this.maxAmount = false;
         this.balanceVerified = false;
         this.cashAvailiabilityVerified = false;
         this.disbursed = false;
@@ -40,7 +39,7 @@ class Processor {
     }
 
     eventCapture() {
-        console.log(this.currentEvent)
+        console.log(this.pinChecked)
         if (this.ejected) {
             this.ejected = false;
             this.currentEvent = "WELCOME";
@@ -49,49 +48,32 @@ class Processor {
                 this.currentEvent = "DISBURSED"
             }
         } else if (this.pinChecked) {
-            if (!this.maxAmount || this.requestedAmount > 0) {
-                this.monitor.message = "Enter withdraw amount which must be a multiple of $20: $" + this.requestedAmount;
-            }
-            const data = this.keypad.data;
-            const cancel = this.keypad.cancel;
-            const enter = this.keypad.enter;
-            this.keypad.data = 10;
-            this.keypad.cancel = false;
-            this.keypad.enter = false;
-            if (cancel) {
-                this.monitor.message = "Transcation cancelled";
+            if (this.keypad.cancel) {
                 this.pinChecked = false;
+                this.keypad.cancel = false;
+                this.monitor.message = "Transcation cancelled";
                 this.currentEvent = "CANCEL_TRANSCATION"
-            } else if (enter) {
-                this.currentEvent = "CHECK_AMOUNT";
-            } else if (data < 10){
-                this.requestedAmount = this.requestedAmount * 10 + data;
+            } else {
+                this.currentEvent = "CHECK_AMOUNT"
+            }
+        } else if (this.inserted) {
+            if (this.keypad.cancel) {
+                this.inserted = false;
+                this.keypad.cancel = false;
+                this.monitor.message = "Transcation cancelled";
+                this.currentEvent = "CANCEL_TRANSCATION"
+            } else if (this.keypad.data < 10) {
+                this.currentEvent = "CHECK_PIN"
             }
         } else if (this.welcomed) {
             if (this.cardScanner.status) {
-                if (!this.wrongPin || this.PIN.length > 0) {
-                    let message = "Enter PIN: ";
-                    for(let i = 0; i < this.PIN.length; i++) {
-                        message += "*"
-                    }
-                    this.monitor.message = message;
-                    this.account = this.cardScanner.accountNumber; 
-                }
-                const data = this.keypad.data;
-                const cancel = this.keypad.cancel;
-                const enter = this.keypad.enter;
-                this.keypad.data = 10;
-                this.keypad.cancel = false;
+                this.welcomed = false;
+                this.inserted = true;
+                this.account = this.cardScanner.accountNumber; 
                 this.keypad.enter = false;
-                if (cancel) {
-                    this.monitor.message = "Transcation cancelled";
-                    this.welcomed = false;
-                    this.currentEvent = "CANCEL_TRANSCATION"
-                } else if (enter) {
-                    this.currentEvent = "CHECK_PIN";
-                } else if (this.PIN.length < 4 && data < 10) {
-                    this.PIN = this.PIN += data;
-                }
+                this.keypad.cancel = false;
+                this.keypad.data = 10
+                this.monitor.message = "Enter PIN:\n"
             }
         }
     }
@@ -124,30 +106,57 @@ class Processor {
     }
     
     checkPIN() {
-        const account = this.database.accounts[this.account]
-        if (account.PIN === this.PIN) {
-            this.pinChecked = true;
-            this.welcomed = false;
-            this.wrongPin = false;
-        } else {
-            this.PIN = "";
-            this.monitor.message = "Wrong PIN, try again";
-            this.wrongPin = true;
+        if (this.PIN.length < 4) {
+            this.PIN += this.keypad.data
+            this.keypad.data = 10;
+        }
+        
+        let message = "Enter PIN:\n"
+        for(let i = 0; i < this.PIN.length; i++) {
+            message += "*"
+        }
+        this.monitor.message = message;
+        
+        if (this.PIN.length === 4) {
+            const account = this.database.accounts[this.account]
+            if (account.PIN === this.PIN) {
+                this.pinChecked = true;
+                this.inserted = false;
+            } else {
+                this.PIN = "";
+                this.monitor.message = "Wrong PIN, try again";
+            }
         }
     }    
 
     checkAmount() { 
-        this.monitor.message = "Enter withdraw amount which must be a multiple of $20: ";
         const account = this.database.accounts[this.account];
-        const remainMaxAccount = account.maxAllowableWithdraw - account.currentWithdraw;
-        if (remainMaxAccount >= this.requestedAmount) {
+        const remainMaxAmount = account.maxAllowableWithdraw - account.currentWithdraw;
+        
+        let message = "Your max withdraw amount is $" + remainMaxAmount + "\n";
+        message += "Your balance is $" + account.balance.toFixed(2) + "\n";
+        message += "Availiable cash in this ATM is $" + this.cashBank.twentyDollarBills * 20 + "\n"
+        message += "Enter withdraw amount which must be a multiple of $20:\n";
+        this.monitor.message = message + "$" + this.requestedAmount;
+        
+        if (this.keypad.data < 10) {
+            this.requestedAmount = this.requestedAmount * 10 + this.keypad.data;
+            this.keypad.data = 10;
+        }
+        this.monitor.message = message + "$" + this.requestedAmount;
+
+        if (!this.keypad.enter) {
+            return;
+        }
+
+        if (remainMaxAmount >= this.requestedAmount) {
             this.pinChecked = false;
             this.amountChecked = true;
             this.maxAmount = false;
             this.verifyAccountBalance();
         } else {
             this.requestedAmount = 0;
-            this.monitor.message = "Max withdraw amount reached, $" + remainMaxAccount + " left, try again";
+            this.monitor.message = "Max withdraw amount reached, try again";
             this.maxAmount = true
         }
     }
@@ -159,7 +168,7 @@ class Processor {
             this.balanceVerified = true;
             this.verifyBillAvailiability()
         } else {
-            this.errorMessage = "Not enough account balance $" + account.balance + " left";
+            this.errorMessage = "Not enough account balance";
             this.systemFailure();
         }
     }
@@ -175,7 +184,7 @@ class Processor {
                 this.cashAvailiabilityVerified = true;
                 this.disburseBill(); 
             } else {
-                this.errorMessage = "Not enough cash in this ATM $" + this.twentyDollarBills + " left";
+                this.errorMessage = "Not enough cash in this ATM";
                 this.systemFailure();
             }
         }
