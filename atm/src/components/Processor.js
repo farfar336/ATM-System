@@ -52,18 +52,20 @@ class Processor {
             if (!this.maxAmount) {
                 this.monitor.message = "Enter withdraw amount which must be a multiple of $20";
             }
-            const keyPressed = this.keypad.keyPressed;
-            this.keypad.keyPressed = null;
-            if (keyPressed === null) {
-                return;
-            } else if (keyPressed === 11) {
+            const data = this.keypad.data;
+            const cancel = this.keypad.cancel;
+            const enter = this.keypad.enter;
+            this.keypad.data = 10;
+            this.keypad.cancel = false;
+            this.keypad.enter = false;
+            if (cancel) {
                 this.monitor.message = "Transcation cancelled";
                 this.pinChecked = false;
                 this.currentEvent = "CANCEL_TRANSCATION"
-            } else if (keyPressed === 10) {
+            } else if (enter) {
                 this.currentEvent = "CHECK_AMOUNT";
-            } else {
-                this.requestedAmount = this.requestedAmount * 10 + keyPressed;
+            } else if (data < 10){
+                this.requestedAmount = this.requestedAmount * 10 + data;
                 this.keypad.keyPressed = null;
             }
         } else if (this.welcomed) {
@@ -72,18 +74,22 @@ class Processor {
                     this.monitor.message = "Enter PIN"
                     this.account = this.cardScanner.accountNumber;
                 }
-                const keyPressed = this.keypad.keyPressed;
-                this.keypad.keyPressed = null;
-                if (keyPressed === null) {
-                    return;
-                } else if (keyPressed === 11) {
+                const data = this.keypad.data;
+                const cancel = this.keypad.cancel;
+                const enter = this.keypad.enter;
+                console.log(this.keypad);
+                this.keypad.data = 10;
+                this.keypad.cancel = false;
+                this.keypad.enter = false;
+                console.log(this.keypad);
+                if (cancel) {
                     this.monitor.message = "Transcation cancelled";
                     this.welcomed = false;
                     this.currentEvent = "CANCEL_TRANSCATION"
-                } else if (keyPressed === 10) {
+                } else if (enter) {
                     this.currentEvent = "CHECK_PIN";
-                } else if (this.PIN.length < 4) {
-                    this.PIN = this.PIN += keyPressed;
+                } else if (this.PIN.length < 4 && data < 10) {
+                    this.PIN = this.PIN += data;
                 }
             }
         }
@@ -207,6 +213,7 @@ class Processor {
 
     systemFailure() {
         this.monitor.message = this.errorMessage;
+        this.errorMessage = "";
         this.ejectCard();
     }
 }

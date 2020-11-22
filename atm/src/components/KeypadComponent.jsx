@@ -4,8 +4,16 @@ import "./KeypadComponent.css"
 const Keypad = (props) => {
     const generateOnClick = (value) => {
         return () => {
-            props.keypad.keyPressed = value;
+            props.keypad.data = value;
         }
+    }
+
+    const onEnterClick = () => {
+        props.keypad.enter = true;
+    }
+
+    const onCancelClick = () => {
+        props.keypad.cancel = true;
     }
 
     return (<div className="Keypad">
@@ -25,9 +33,9 @@ const Keypad = (props) => {
             <button className="KeypadButton" onClick={generateOnClick(9)}>9</button>
         </div>
         <div className="KeypadRow">
-            <button className="KeypadButton" onClick={generateOnClick(11)}>X</button>
+            <button className="KeypadButton" onClick={onCancelClick}>X</button>
             <button className="KeypadButton" onClick={generateOnClick(0)}>0</button>
-            <button className="KeypadButton" onClick={generateOnClick(10)}>🗸</button>
+            <button className="KeypadButton" onClick={onEnterClick}>🗸</button>
         </div>
     </div>)
 }
