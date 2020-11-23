@@ -20,6 +20,7 @@ class Processor {
         this.welcomed = false;
         this.inserted = false;
         this.pinChecked = false;
+        this.checkingAmount = false;
         this.amountChecked = false;
         this.balanceVerified = false;
         this.cashAvailiabilityVerified = false;
@@ -51,6 +52,7 @@ class Processor {
             if (this.keypad.cancel) {
                 this.pinChecked = false;
                 this.keypad.cancel = false;
+                this.checkingAmount = false;
                 this.monitor.message = "Transcation cancelled";
                 this.currentEvent = "CANCEL_TRANSCATION"
             } else {
@@ -137,27 +139,32 @@ class Processor {
         message += "Your balance is $" + account.balance.toFixed(2) + "\n";
         message += "Availiable cash in this ATM is $" + this.cashBank.twentyDollarBills * 20 + "\n"
         message += "Enter withdraw amount which must be a multiple of $20:\n";
-        this.monitor.message = message + "$" + this.requestedAmount;
+       
+        if(!this.checkingAmount) {
+            this.monitor.message = message + "$" + this.requestedAmount;
+            this.checkingAmount = true;
+        }
         
         if (this.keypad.data < 10) {
             this.requestedAmount = this.requestedAmount * 10 + this.keypad.data;
             this.keypad.data = 10;
-        }
-        this.monitor.message = message + "$" + this.requestedAmount;
+            this.monitor.message = message + "$" + this.requestedAmount;
+        } 
 
         if (!this.keypad.enter) {
             return;
+        } else {
+            this.keypad.enter = false;
         }
 
         if (remainMaxAmount >= this.requestedAmount) {
             this.pinChecked = false;
             this.amountChecked = true;
-            this.maxAmount = false;
+            this.checkingAmount = false;
             this.verifyAccountBalance();
         } else {
             this.requestedAmount = 0;
             this.monitor.message = "Max withdraw amount reached, try again";
-            this.maxAmount = true
         }
     }
 
