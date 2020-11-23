@@ -218,7 +218,7 @@ class Processor {
         setTimeout(() => {
             this.cardScanner.status = false
             this.ejected = true;
-        }, 500)
+        }, 1500)
     } 
 
     systemClock() {
