@@ -187,7 +187,7 @@ class Processor {
             this.systemFailure();
         } else {
             const bills = this.requestedAmount / 20;
-            if (this.cashBank.twentyDollarBills > bills) {
+            if (this.cashBank.twentyDollarBills >= bills) {
                 this.cashAvailiabilityVerified = true;
                 this.disburseBill(); 
             } else {
