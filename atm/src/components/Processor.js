@@ -171,7 +171,7 @@ class Processor {
     verifyAccountBalance() {
         this.amountChecked = false;
         const account = this.database.accounts[this.account];
-        if (account.balance > this.requestedAmount) {
+        if (account.balance >= this.requestedAmount) {
             this.balanceVerified = true;
             this.verifyBillAvailiability()
         } else {
