@@ -1,8 +1,9 @@
 class CardScanner {
     constructor() {
         this.accountNumber = "";
-        this.cardStatus = false;
-        this.error = false;
+        this.cardInserted = false;
+        this.ejectCard = false;
+        this.deviceError = false;
     }
 }
 

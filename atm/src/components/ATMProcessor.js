@@ -47,7 +47,7 @@ class ATMProcessor {
         this.cancelled = false;
         this.systemShutdown = false;
         this.cardEjected = false;
-        this.systemFailure = false;
+        this.sysFailure = false;
     }
 
     eventCapture() {
@@ -112,6 +112,7 @@ class ATMProcessor {
             this.monitor.message = "Monitor error";
             this.systemFailure();
         }
+        console.log(this.cardScanner)
         if (this.cardScanner.deviceError) {
             this.monitor.message = "Card scanner error";
             this.systemFailure();
@@ -300,10 +301,13 @@ class ATMProcessor {
     }
 
     systemFailure() {
-        this.systemFailure = true;
+        this.sysFailure = true;
         this.cardScanner.ejectCard = true;
+        this.cardScanner.cardInserted = false;
         this.cardEjected = true;
-        this.systemShutdown = true;
+        setTimeout(() => {
+            this.systemShutdown = true;
+        }, 100)
     }
 }
 
