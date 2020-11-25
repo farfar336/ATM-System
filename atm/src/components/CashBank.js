@@ -1,6 +1,6 @@
 class CardBank {
-    constructor(twentyDollarBills) {
-        this.twentyDollarBills = twentyDollarBills;
+    constructor(cash) {
+        this.cash = cash;
     }
 }
 

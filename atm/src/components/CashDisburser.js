@@ -1,7 +1,8 @@
 class CardDisburser {
     constructor() {
-        this.twentyDollarBillsToDisburse = 0;
-        this.disbursed = false;
+        this.cash = 0;
+        this.disburse = false;
+        this.deviceError = false;
     }
 }
 

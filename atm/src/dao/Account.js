@@ -1,12 +1,9 @@
 class Account {
-    constructor(accountNum, status, balance, PIN, CardHolder, maxAllowableWithdraw, currentWithdraw) {
+    constructor(accountNum, status, balance, PIN) {
         this.accountNum = accountNum;
         this.status = status;
         this.balance = balance;
         this.PIN = PIN;
-        this.CardHolder = CardHolder;
-        this.maxAllowableWithdraw = maxAllowableWithdraw;
-        this.currentWithdraw = currentWithdraw;
     }
 }
 
