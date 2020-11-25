@@ -46,7 +46,6 @@ class ATMProcessor {
         this.ejecting = false;
         this.cancelled = false;
         this.systemShutdown = false;
-        this.cardEjected = false;
         this.sysFailure = false;
     }
 
@@ -60,10 +59,6 @@ class ATMProcessor {
             if(!this.cashDisburser.disburse) {
                 this.disbursing = false;
                 this.currentEvent = "EJECT_CARD"
-            }
-        } else if (this.amountChecked) {
-            if(!this.disburser.disburse) {
-                this.disbursed = true;
             }
         } else if (this.pinChecked) {
             this.currentEvent = "CHECK_AMOUNT"
@@ -112,7 +107,6 @@ class ATMProcessor {
             this.monitor.message = "Monitor error";
             this.systemFailure();
         }
-        console.log(this.cardScanner)
         if (this.cardScanner.deviceError) {
             this.monitor.message = "Card scanner error";
             this.systemFailure();
@@ -267,15 +261,6 @@ class ATMProcessor {
     }
 
     ejectCard() {
-        if (this.monitor.deviceError) {
-            this.monitor.message = "Monitor error";
-            this.systemFailure();
-        }
-        
-        if (this.cardScanner.deviceError) {
-            this.monitor.message = "Card scanner error";
-            this.systemFailure();
-        }
         this.cardScanner.ejectCard = true
         this.ejecting = true
 
@@ -283,7 +268,6 @@ class ATMProcessor {
         this.inserted = false;
         this.pinChecked = false;
         this.amountChecked = false;
-        this.disbursed = false;
         this.pinMessageDisplayed = false;
         this.amountMessageDisplayed = false;
         this.PIN = "";
@@ -304,7 +288,6 @@ class ATMProcessor {
         this.sysFailure = true;
         this.cardScanner.ejectCard = true;
         this.cardScanner.cardInserted = false;
-        this.cardEjected = true;
         setTimeout(() => {
             this.systemShutdown = true;
         }, 100)
