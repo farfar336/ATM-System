@@ -30,7 +30,7 @@ class ATMProcessor {
         this.PIN = "";
         this.accountNumber = "";
         this.requestedAmount = 0;
-        this.maxAllowableWithdraw = 400;
+        this.maxAllowableWithdraw = 200;
         this.currentEvent = "WELCOME";
 
 
